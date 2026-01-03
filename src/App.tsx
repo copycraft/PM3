@@ -1,123 +1,69 @@
-import { useState } from "react"
-import "./App.css"
+import { useEffect, useState } from "react"
+import type { Board } from "./types/types"
+import { loadBoards, saveBoards, subscribe } from "./db/csvDb"
+import BoardList from "./components/BoardList"
+import BoardView from "./components/BoardView"
+import "./styles/board.css"
 
-type Card = {
-    id: string
-    title: string
-}
+export default function App() {
+    const [boards, setBoards] = useState<Board[]>(() => {
+        const stored = loadBoards()
+        return stored.length
+            ? stored
+            : [
+                {
+                    id: crypto.randomUUID(),
+                    name: "Demo Board",
+                    columns: [
+                        { id: "todo", title: "Todo", cards: [] },
+                        { id: "doing", title: "Doing", cards: [] },
+                        { id: "done", title: "Done", cards: [] },
+                    ],
+                },
+            ]
+    })
 
-type Column = {
-    id: string
-    title: string
-    cards: Card[]
-}
+    const [activeBoard, setActiveBoard] = useState<string | null>(null)
+    const [currentTime, setCurrentTime] = useState(new Date())
 
-function App() {
-    const [columns, setColumns] = useState<Column[]>([
-        {
-            id: "todo",
-            title: "Todo",
-            cards: [],
-        },
-        {
-            id: "doing",
-            title: "Doing",
-            cards: [],
-        },
-        {
-            id: "done",
-            title: "Done",
-            cards: [],
-        },
-    ])
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+        return () => clearInterval(timer)
+    }, [])
 
-    const addCard = (columnId: string) => {
-        const title = prompt("Card title?")
-        if (!title) return
+    useEffect(() => saveBoards(boards), [boards])
+    useEffect(() => {
+        const unsubscribe = subscribe(setBoards)
+        return unsubscribe
+    }, [])
 
-        setColumns(cols =>
-            cols.map(col =>
-                col.id === columnId
-                    ? {
-                        ...col,
-                        cards: [
-                            ...col.cards,
-                            { id: crypto.randomUUID(), title },
-                        ],
-                    }
-                    : col
-            )
-        )
-    }
+    const currentBoard = activeBoard ? boards.find((b) => b.id === activeBoard) : null
 
-    const moveCard = (
-        fromColumnId: string,
-        toColumnId: string,
-        cardId: string
-    ) => {
-        let movedCard: Card | null = null
-
-        const newColumns = columns.map(col => {
-            if (col.id === fromColumnId) {
-                const remaining = col.cards.filter(card => {
-                    if (card.id === cardId) {
-                        movedCard = card
-                        return false
-                    }
-                    return true
-                })
-                return { ...col, cards: remaining }
-            }
-            return col
-        })
-
-        if (!movedCard) return
-
-        setColumns(
-            newColumns.map(col =>
-                col.id === toColumnId
-                    ? { ...col, cards: [...col.cards, movedCard!] }
-                    : col
-            )
+    if (activeBoard && !currentBoard) {
+        return (
+            <div className="app-center">
+                <p>Board not found.</p>
+                <button onClick={() => setActiveBoard(null)}>Go back</button>
+            </div>
         )
     }
 
     return (
-        <div className="board">
-            {columns.map(col => (
-                <div className="column" key={col.id}>
-                    <h2>{col.title}</h2>
+        <div className="app-center">
+            <header className="app-header">
+                <h1>Copicraft</h1>
+                <span className="time">{currentTime.toLocaleTimeString()}</span>
+            </header>
 
-                    <div className="cards">
-                        {col.cards.map(card => (
-                            <div className="card" key={card.id}>
-                                <p>{card.title}</p>
+            <main className="app-main">
+                {currentBoard ? (
+                    <BoardView board={currentBoard} updateBoards={setBoards} goBack={() => setActiveBoard(null)} />
+                ) : (
+                    <BoardList boards={boards} setBoards={setBoards} open={setActiveBoard} />
+                )}
+            </main>
 
-                                <div className="card-actions">
-                                    {columns.map(target =>
-                                        target.id !== col.id ? (
-                                            <button
-                                                key={target.id}
-                                                onClick={() =>
-                                                    moveCard(col.id, target.id, card.id)
-                                                }
-                                            >
-                                                → {target.title}
-                                            </button>
-                                        ) : null
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <button className="add-card" onClick={() => addCard(col.id)}>
-                        + Add card
-                    </button>
-                </div>
-            ))}
+            <footer className="app-footer">Made with 💖 by Copicraft • {new Date().getFullYear()}</footer>
         </div>
     )
 }
-
-export default App
