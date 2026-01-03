@@ -1,0 +1,53 @@
+.board {
+    display: flex;
+    gap: 1.5rem;
+    padding: 2rem;
+    align-items: flex-start;
+}
+
+.column {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 1rem;
+    width: 280px;
+}
+
+.column h2 {
+    margin-top: 0;
+    text-align: left;
+}
+
+.cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.card {
+    background: #2b2b2b;
+    padding: 0.75rem;
+    border-radius: 8px;
+    text-align: left;
+}
+
+.card p {
+    margin: 0 0 0.5rem 0;
+}
+
+.card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.card-actions button {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.add-card {
+    width: 100%;
+    background: transparent;
+    border: 1px dashed #646cff;
+}
